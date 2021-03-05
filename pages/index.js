@@ -2,177 +2,161 @@ import Head from "next/head";
 
 import React, { useEffect, useRef, useState } from "react";
 import { Listbox, Transition } from "@headlessui/react";
-import sparkline from "@fnando/sparkline";
 const speed = ["Slow (Recommended)", "Average", "Fast", "Instant"];
 
-const MiniGraph = () => {
-  const d = [
-    { name: "Ethereum", date: "2017-01-01", value: 8.3 },
-    { name: "Ethereum", date: "2017-02-01", value: 10.57 },
-    { name: "Ethereum", date: "2017-03-01", value: 15.73 },
-    { name: "Ethereum", date: "2017-04-01", value: 49.51 },
-    { name: "Ethereum", date: "2017-05-01", value: 85.69 },
-    { name: "Ethereum", date: "2017-06-01", value: 226.51 },
-    { name: "Ethereum", date: "2017-07-01", value: 246.65 },
-    { name: "Ethereum", date: "2017-08-01", value: 213.87 },
-    { name: "Ethereum", date: "2017-09-01", value: 386.61 },
-    { name: "Ethereum", date: "2017-10-01", value: 303.56 },
-    { name: "Ethereum", date: "2017-11-01", value: 298.21 },
+import MiniGraph from "../components/MiniGraph";
+import HorizontalTabSelect from "../components/HorizontalTabSelect";
+import testPriceData from "../sampledata.json";
+
+const weiToGwei = (n) => n / 10e9;
+const roundto2decimalplaces = (n) => Math.round(n * 100) / 100;
+
+const data = testPriceData.body.aggregations.hour_bucket.buckets.map(
+  ({ key_as_string, avgGasDay, percentilesDay }) => ({
+    date: key_as_string,
+    // convert wei to gwi
+    value: roundto2decimalplaces(weiToGwei(percentilesDay.values["50.0"])),
+  })
+);
+
+export async function getServerSideProps(context) {
+  return {
+    props: {}, // will be passed to the page component as props
+  };
+}
+
+const currencies = {
+  Gwei: { sm: "g", placeholder: "0" },
+  ETH: { sm: "Ξ", placeholder: "0.0" },
+  USD: { sm: "$", placeholder: "0.00" },
+};
+
+const TR = ({ name, setLimitPrice, currencySelected, setCurrencySelected }) => {
+  // const data = [
+  //   { name: "ETH", date: "2017-01-01", value: 8.3 },
+  //   { name: "ETH", date: "2017-02-01", value: 10.57 },
+  //   { name: "ETH", date: "2017-03-01", value: 15.73 },
+  //   { name: "ETH", date: "2017-04-01", value: 49.51 },
+  //   { name: "ETH", date: "2017-05-01", value: 85.69 },
+  //   { name: "ETH", date: "2017-06-01", value: 226.51 },
+  //   { name: "ETH", date: "2017-07-01", value: 246.65 },
+  //   { name: "ETH", date: "2017-08-01", value: 213.87 },
+  //   { name: "ETH", date: "2017-09-01", value: 386.61 },
+  //   { name: "ETH", date: "2017-10-01", value: 303.56 },
+  //   { name: "ETH", date: "2017-11-01", value: 298.21 },
+  // ];
+  console.log(testPriceData);
+
+  const mostRecentPrice = data[data.length - 1].value;
+  const [price, setPrice] = useState(mostRecentPrice);
+  const [lastPrice, setLastPrice] = useState(0);
+
+  return (
+    <>
+      <td className="px-3 py-1.5 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 font-medium text-gray-900">
+        {name}
+      </td>
+
+      <td className="px-3 py-1.5 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
+        <MiniGraph
+          setPrice={setPrice}
+          setLimitPrice={setLimitPrice}
+          lastPrice={lastPrice}
+          setLastPrice={setLastPrice}
+          data={data}
+        />
+      </td>
+      <td className="px-3 py-1.5 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
+        <button className="w-12">{price}</button>
+      </td>
+    </>
+  );
+};
+
+const ConversionTable = ({
+  currencies,
+  currency,
+  // For later side-effect of deselecting price
+  setLimitPrice,
+  currencySelected,
+  setCurrencySelected,
+}) => {
+  const transactions = [
+    { name: "Compound Deposit" },
+    { name: "Uniswap Trade" },
+    { name: "ERC20 Approval" },
+    { name: "ERC20 Transfer" },
+    { name: "ETH Transfer" },
   ];
 
-  const findClosest = (target, tagName) => {
-    if (target.tagName === tagName) {
-      return target;
-    }
-
-    while ((target = target.parentNode)) {
-      if (target.tagName === tagName) {
-        break;
-      }
-    }
-
-    return target;
-  };
-
-  var options = {
-    onmousemove: (event, datapoint) => {
-      var svg = findClosest(event.target, "svg");
-      var tooltip = svg.nextElementSibling;
-      var date = new Date(datapoint.date)
-        .toUTCString()
-        .replace(/^.*?, (.*?) \d{2}:\d{2}:\d{2}.*?$/, "$1");
-
-      tooltip.textContent = `${date}: $${datapoint.value.toFixed(2)} USD`;
-      tooltip.style.top = `${event.offsetY}px`;
-      tooltip.style.left = `${event.offsetX + 20}px`;
-    },
-
-    onmouseout: (event) => {
-      var svg = findClosest(event.target, "svg");
-      var tooltip = svg.nextElementSibling;
-    },
-  };
-
-  const graphRef = useRef(null);
-  useEffect(() => {
-    sparkline(graphRef.current, d, options);
-  }, []);
-
   return (
-    <div>
-      <svg
-        ref={graphRef}
-        className="eth"
-        width="100"
-        height="20"
-        stroke-width="2"
-        stroke="blue"
-        fill="rgba(0, 0, 255, .2)"
-      ></svg>
-      <span className="tooltip text-xs">{d[d.length - 1].value}</span>
-    </div>
-  );
-};
-
-const HorizontalCurrencySelect = () => {
-  const commonStuff =
-    "currencySelect relative inline-flex items-center py-2 text-sm font-medium focus:outline-none border";
-
-  const nonSelected =
-    "border-gray-300 bg-white  text-gray-700 hover:bg-gray-50";
-
-  const selected = "border-gray-300 bg-blue-600 text-white";
-
-  const [selectedElement, setSelectedElement] = useState("Gwei");
-
-  return (
-    <div
-      className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px "
-      aria-label="Pagination"
-    >
-      {["Gwei", "USD", "Eth"].map((e, i, arr) => (
-        <button
-          key={`${e} + ${selectedElement}`}
-          className={`${`${commonStuff} ${
-            i == 0
-              ? " px-2 rounded-l-md "
-              : i <= arr.length - 2
-              ? " px-2"
-              : " px-2 rounded-r-md "
-          }`} ${e == selectedElement ? selected : nonSelected}`}
-          onClick={(e) => setSelectedElement(e.target.innerText)}
-        >
-          {e}
-        </button>
-      ))}
-    </div>
-  );
-};
-
-const ConversionTable = () => (
-  <div class="flex flex-col">
-    <div class="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-      <div class="align-middle inline-block min-w-full shadow overflow-hidden rounded-lg border-b border-gray-200">
-        <table class="min-w-full">
-          <thead>
-            <tr>
-              <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th class="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                High
-              </th>
-              <th class="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                Low
-              </th>
-              <th class="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                Med
-              </th>
-            </tr>
-          </thead>
-
-          <tbody class="bg-white">
-            {[
-              "Compound Deposit",
-              "Uniswap Trade",
-              "ERC20 Approval",
-              "ERC20 Transfer",
-              "ETH Transfer",
-            ].map((name, index) => (
-              <tr className={index % 2 == 1 ? "bg-gray-50" : ""} key={name}>
-                <td class="px-4 py-2 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 font-medium text-gray-900">
-                  {name}
-                </td>
-
-                <td class="px-3 py-2 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
-                  <button>0.00</button>
-                </td>
-                <td class="px-3 py-2 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
-                  <button>0.00</button>
-                </td>
-                <td class="px-3 py-2 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
-                  <button>0.00</button>
-                </td>
+    <div className="flex flex-col">
+      <div className="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="align-middle inline-block min-w-full shadow overflow-hidden rounded-lg border-b border-gray-200">
+          <table className="min-w-full">
+            <thead>
+              <tr>
+                <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  Data
+                </th>
+                <th className="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  Price
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="text-sm text-gray-700 text-right pt-2">24 hour prices</p>
-    </div>
-  </div>
-);
+            </thead>
 
-const ConversionPane = () => (
-  <>
-    <div className="flex flex-row-reverse">
-      <HorizontalCurrencySelect />
+            <tbody className="bg-white">
+              {transactions.map(({ name }, i) => (
+                <tr className={i % 2 == 1 ? "bg-gray-50" : ""} key={name}>
+                  <TR
+                    name={name}
+                    setLimitPrice={setLimitPrice}
+                    currencySelected={currencySelected}
+                    setCurrencySelected={setCurrencySelected}
+                  />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-sm text-gray-700 text-right pt-2">24 hour prices</p>
+      </div>
     </div>
-    <div className="pt-2">
-      <ConversionTable />
-    </div>
-  </>
-);
+  );
+};
+
+const ConversionPane = ({
+  limitPrice,
+  setLimitPrice,
+  currencySelected,
+  setCurrencySelected,
+}) => {
+  const [currency, setCurrency] = useState("Gwei");
+
+  return (
+    <>
+      <div className="flex flex-row-reverse">
+        <HorizontalTabSelect
+          elements={Object.keys(currencies)}
+          selectedElement={currency}
+          setSelectedElement={setCurrency}
+        />
+      </div>
+      <div className="pt-2">
+        <ConversionTable
+          currencies={currencies}
+          currency={currency}
+          setLimitPrice={setLimitPrice}
+          currencySelected={currencySelected}
+          setCurrencySelected={setCurrencySelected}
+        />
+      </div>
+    </>
+  );
+};
 
 const BasicInput = () => (
   <div>
@@ -191,13 +175,8 @@ const BasicInput = () => (
   </div>
 );
 
-const MoneyInput = () => {
+const MoneyInput = ({ limitPrice, setLimitPrice }) => {
   const defaultSymbol = "Gwei";
-  const symbols = {
-    Gwei: { sm: "g", placeholder: "0" },
-    ETH: { sm: "Ξ", placeholder: "0.0" },
-    USD: { sm: "$", placeholder: "0.00" },
-  };
   const [selected, setSelected] = useState(defaultSymbol);
   return (
     <div>
@@ -207,7 +186,7 @@ const MoneyInput = () => {
       <div className="mt-1 relative rounded-md shadow-sm">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <span className="text-gray-500 sm:text-sm">
-            {symbols[selected].sm}
+            {currencies[selected].sm}
           </span>
         </div>
         <input
@@ -215,7 +194,9 @@ const MoneyInput = () => {
           name="price"
           id="price"
           className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
-          placeholder={symbols[selected].placeholder}
+          placeholder={currencies[selected].placeholder}
+          value={limitPrice}
+          onInput={(e) => setLimitPrice(e.target.value)}
         />
         <div className="absolute inset-y-0 right-0 flex items-center">
           <label for="currency" className="sr-only">
@@ -227,7 +208,7 @@ const MoneyInput = () => {
             className="focus:ring-indigo-500 focus:border-indigo-500 h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md"
             onChange={(e) => setSelected(e.target.value)}
           >
-            {Object.keys(symbols).map((sym) => (
+            {Object.keys(currencies).map((sym) => (
               <option key={sym}>{sym}</option>
             ))}
           </select>
@@ -351,6 +332,9 @@ const SubmitButton = () => (
 );
 
 export default function Home() {
+  const [limitPrice, setLimitPrice] = useState("");
+  const [currencySelected, setCurrencySelected] = useState("");
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 overflow-x-hidden	">
       <Head>
@@ -366,19 +350,26 @@ export default function Home() {
           Get text alerts when gas falls below a limit
         </p>
 
-        <div className="flex flex-wrap items-center justify-around max-w-4xl mt-6 sm:w-full">
+        <div className="flex flex-wrap  items-center justify-around flex- max-w-4xl mt-6 sm:w-full">
           <div className="p-6 mt-6 text-left border w-96 rounded-xl ">
             <div className="pt-4">
-              <ConversionPane />
-              <MiniGraph />
+              <ConversionPane
+                limitPrice={limitPrice}
+                setLimitPrice={setLimitPrice}
+                currencySelected={currencySelected}
+                setCurrencySelected={setCurrencySelected}
+              />
             </div>
           </div>
-          <div className="p-6 mt-6 text-left border w-96 rounded-xl ">
+          <div className="p-6 mt-6 text-left border w-96 rounded-xl md:mx-4">
             <div className="pt-4">
               <BasicInput />
             </div>
             <div className="pt-4">
-              <MoneyInput />
+              <MoneyInput
+                limitPrice={limitPrice}
+                setLimitPrice={setLimitPrice}
+              />
             </div>
             <div className="pt-4">
               <CurrencySelect />
