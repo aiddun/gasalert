@@ -4,7 +4,7 @@ const HorizontalTabSelect = ({
   setSelectedElement,
 }) => {
   const commonStyle =
-    "currencySelect relative inline-flex items-center py-2 text-sm font-medium focus:outline-none border";
+    "currencySelect relative inline-flex items-center py-2 text-xs font-medium focus:outline-none border";
 
   const nonSelectedStyle =
     "border-gray-300 bg-white  text-gray-700 hover:bg-gray-50";
@@ -13,7 +13,7 @@ const HorizontalTabSelect = ({
 
   return (
     <div
-      className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px "
+      className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px h-10"
       aria-label="Pagination"
     >
       {elements.map((el, index, arr) => (

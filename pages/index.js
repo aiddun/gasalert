@@ -45,7 +45,6 @@ const TR = ({ name, setLimitPrice, currencySelected, setCurrencySelected }) => {
   //   { name: "ETH", date: "2017-10-01", value: 303.56 },
   //   { name: "ETH", date: "2017-11-01", value: 298.21 },
   // ];
-  console.log(testPriceData);
 
   const mostRecentPrice = data[data.length - 1].value;
   const [price, setPrice] = useState(mostRecentPrice);
@@ -57,15 +56,7 @@ const TR = ({ name, setLimitPrice, currencySelected, setCurrencySelected }) => {
         {name}
       </td>
 
-      <td className="px-3 py-1.5 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
-        <MiniGraph
-          setPrice={setPrice}
-          setLimitPrice={setLimitPrice}
-          lastPrice={lastPrice}
-          setLastPrice={setLastPrice}
-          data={data}
-        />
-      </td>
+      <td className="px-3 py-1.5 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium"></td>
       <td className="px-3 py-1.5 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
         <button className="w-12">{price}</button>
       </td>
@@ -75,7 +66,6 @@ const TR = ({ name, setLimitPrice, currencySelected, setCurrencySelected }) => {
 
 const ConversionTable = ({
   currencies,
-  currency,
   // For later side-effect of deselecting price
   setLimitPrice,
   currencySelected,
@@ -89,40 +79,64 @@ const ConversionTable = ({
     { name: "ETH Transfer" },
   ];
 
-  return (
-    <div className="flex flex-col">
-      <div className="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div className="align-middle inline-block min-w-full shadow overflow-hidden rounded-lg border-b border-gray-200">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                  Data
-                </th>
-                <th className="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                  Price
-                </th>
-              </tr>
-            </thead>
+  const [currency, setCurrency] = useState("Gwei");
+  const [lastPrice, setLastPrice] = useState(0);
 
-            <tbody className="bg-white">
-              {transactions.map(({ name }, i) => (
-                <tr className={i % 2 == 1 ? "bg-gray-50" : ""} key={name}>
-                  <TR
-                    name={name}
-                    setLimitPrice={setLimitPrice}
-                    currencySelected={currencySelected}
-                    setCurrencySelected={setCurrencySelected}
-                  />
+  return (
+    <div>
+      <div className="flex flex-col">
+        <div className="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="align-middle inline-block min-w-full shadow overflow-hidden rounded-lg border-b border-gray-200">
+            <div className="mx-auto bg-gray-50 py-2">
+              <MiniGraph
+                setLimitPrice={setLimitPrice}
+                lastPrice={lastPrice}
+                setLastPrice={setLastPrice}
+                data={data}
+              />
+            </div>
+            <table className="min-w-full border-t border-gray-200 ">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    Data
+                  </th>
+                  <th className="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    Price
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody className="bg-white">
+                {transactions.map(({ name }, i) => (
+                  <tr className={i % 2 == 1 ? "bg-gray-50" : ""} key={name}>
+                    <TR
+                      name={name}
+                      setLimitPrice={setLimitPrice}
+                      currencySelected={currencySelected}
+                      setCurrencySelected={setCurrencySelected}
+                    />
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-between py-2 px-1">
+              <HorizontalTabSelect
+                elements={["1M", "1W", "1D"]}
+                selectedElement={"1M"}
+                setSelectedElement={setCurrency}
+              />
+              <HorizontalTabSelect
+                elements={Object.keys(currencies)}
+                selectedElement={currency}
+                setSelectedElement={setCurrency}
+              />
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-gray-700 text-right pt-2">24 hour prices</p>
       </div>
     </div>
   );
@@ -135,16 +149,10 @@ const ConversionPane = ({
   setCurrencySelected,
 }) => {
   const [currency, setCurrency] = useState("Gwei");
+  const [lastPrice, setLastPrice] = useState(0);
 
   return (
     <>
-      <div className="flex flex-row-reverse">
-        <HorizontalTabSelect
-          elements={Object.keys(currencies)}
-          selectedElement={currency}
-          setSelectedElement={setCurrency}
-        />
-      </div>
       <div className="pt-2">
         <ConversionTable
           currencies={currencies}
