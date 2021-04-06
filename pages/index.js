@@ -281,7 +281,7 @@ const MoneyInput = ({
   );
 };
 
-const DropdownSelect = ({ options, selected, setSelected }) => {
+const DropdownSelect = ({ options, selected, setSelected, name = "" }) => {
   return (
     <div className="flex items-center justify-center">
       <div className="w-full max-w-72">
@@ -294,7 +294,7 @@ const DropdownSelect = ({ options, selected, setSelected }) => {
           {({ open }) => (
             <>
               <Listbox.Label className="block text-sm leading-5 font-medium text-gray-700">
-                Responsiveness level
+                {name}
               </Listbox.Label>
               <div className="relative">
                 <span className="inline-block w-full rounded-md shadow-sm">
@@ -431,6 +431,9 @@ export default function Home() {
   const speeds = ["Rapid (15s)", "Fast (1min)"];
   const [speed, setSpeed] = useState(speeds[0]);
 
+  const cooldowns = ["30 Min", "1 Day", "3 Days", "1 Time Only"];
+  const [cooldown, setCooldown] = useState(cooldowns[3]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 overflow-x-hidden	">
       <Head>
@@ -480,11 +483,12 @@ export default function Home() {
               />
             </div>
             <div className="pt-4">
-              {/* <DropdownSelect
-                options={speeds}
-                selected={speed}
-                setSelected={setSpeed}
-              /> */}
+              <DropdownSelect
+                name="Max text frequency"
+                options={cooldowns}
+                selected={cooldown}
+                setSelected={setCooldown}
+              />
             </div>
             <div className="pt-8 flex justify-center ">
               <SubmitButton onClick={() => setSubmitted(true)} />
