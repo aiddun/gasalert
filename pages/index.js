@@ -34,8 +34,8 @@ const transactions = [
 const gweiToUSDT = (g, date) => {};
 
 const currencies = {
+  USDT: { sm: "$", placeholder: "0.00" },
   ETH: { sm: "Ξ", placeholder: "0.0" },
-  USDT: { sm: "₮", placeholder: "0.00" },
   Gwei: { sm: "g", placeholder: "0" },
 };
 
