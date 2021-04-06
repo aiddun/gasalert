@@ -47,6 +47,7 @@ export function sparkline(svg, entries, options) {
   const onmouseout = options.onmouseout;
 
   // custom
+  const startx = options.startx;
   const onmouseupdown = options.onmouseupdown;
 
   // Should we run in interactive mode? If yes, this will handle the
@@ -138,10 +139,6 @@ export function sparkline(svg, entries, options) {
   svg.appendChild(fill);
   svg.appendChild(path);
 
-  if (!interactive) {
-    return;
-  }
-
   const cursor = buildElement("line", {
     class: "sparkline--cursor",
     x1: offscreen,
@@ -180,9 +177,19 @@ export function sparkline(svg, entries, options) {
     cursor.setAttribute("x2", x);
   };
 
-  // onstart with last point
-  var lastPoint = datapoints[datapoints.length - 1];
-  setTicker(lastPoint);
+  // override default behavior to highlight the date if applicable
+  const displayDate = options.displayDate;
+  const startIndex = entries.findIndex(({ date }) => date === displayDate);
+  const highlightPoint = datapoints[startIndex];
+  highlightPoint && setTicker(highlightPoint);
+
+  // also overrided feature. usually doesn't display
+  // points at all if interactive mode is disabled (like it currently is)
+  if (!interactive) {
+    return;
+  }
+
+  var lastPoint;
 
   interactionLayer.addEventListener("mouseout", (event) => {
     cursor.setAttribute("x1", offscreen);
@@ -193,7 +200,7 @@ export function sparkline(svg, entries, options) {
     if (onmouseout) {
       onmouseout(event);
     }
-    lastPoint && setTicker(lastPoint);
+    if (lastPoint) setTicker(lastPoint);
   });
 
   interactionLayer.addEventListener("mousemove", (event) => {
@@ -266,7 +273,7 @@ export function sparkline(svg, entries, options) {
     cursor.setAttribute("x2", x);
 
     if (onmouseupdown) {
-      lastPoint = currentDataPoint
+      lastPoint = currentDataPoint;
       onmouseupdown(event, currentDataPoint);
     }
   };

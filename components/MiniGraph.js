@@ -1,18 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import sparkline from "./Sparkline";
+import VerticalTabSelect from "./VerticalTabSelect";
 
 // Memoize bc we have non-declarative components and we dont want to remount on a key change
-const MiniGraph = React.memo(({ setLimitPrice, limitPrice, data }) => {
-  const [price, setPrice] = useState(0);
+const MiniGraph = ({ setPrice, limitPrice, data, display = true }) => {
   const formatDate = (date) =>
-    date
-      .toUTCString()
-      .replace(/^.*?, (.*?) \d{2}:\d{2}:\d{2}.*?$/, "$1")
-      .replace(/[0-9]{4,5}/, "");
+    new Date(date).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+    });
 
   const mostRecentData = data[data.length - 1];
-  let lastSelectedPrice = useRef(mostRecentData.value);
-  let lastDate = useRef(formatDate(new Date(mostRecentData.date)));
+  const lastSelectedPrice = useRef(mostRecentData.value);
+  const lastDate = useRef(null);
   const graphRef = useRef(null);
   const toolTipRef = useRef(null);
 
@@ -31,7 +32,16 @@ const MiniGraph = React.memo(({ setLimitPrice, limitPrice, data }) => {
   };
 
   useEffect(() => {
+    console.log("mount");
+  }, []);
+
+  useEffect(() => {
+    graphRef.current.textContent = "";
+    const mostRecentData = data[data.length - 1];
+    if (!lastDate.current) lastDate.current = mostRecentData.date;
+    if (!lastSelectedPrice.current) lastSelectedPrice.current = mostRecentData.value;
     const options = {
+      displayDate: lastDate.current,
       onmousemove: (event, datapoint) => {
         const tooltip = toolTipRef.current;
 
@@ -41,41 +51,36 @@ const MiniGraph = React.memo(({ setLimitPrice, limitPrice, data }) => {
         tooltip.style.left = `${event.offsetX + 20}px`;
 
         setPrice(datapoint.value);
-        setLimitPrice(datapoint.value);
       },
 
       onmouseout: (event) => {
         const tooltip = toolTipRef.current;
         tooltip.style.top = `${event.offsetY}px`;
         tooltip.style.left = `${event.offsetX + 20}px`;
-        
-        tooltip.textContent = lastDate.current;
+
+        tooltip.textContent = formatDate(lastDate.current);
         setPrice(lastSelectedPrice.current);
-        setLimitPrice(lastSelectedPrice.current);
       },
-      
+
       onmouseupdown: (event, dp) => {
-        const date = formatDate(new Date(dp.date));
+        const date = dp.date;
+        const formattedDate = formatDate(date);
         const tooltip = toolTipRef.current;
-        tooltip.textContent = date;
+        tooltip.textContent = formattedDate;
 
         lastSelectedPrice.current = dp.value;
+        console.log(date);
         lastDate.current = date;
 
         setPrice(dp.value);
-        setLimitPrice(dp.value);
       },
     };
 
     sparkline(graphRef.current, data, options);
-
-    return () => {
-      console.log("should never be here");
-    };
-  }, []);
+  }, [data]);
 
   return (
-    <div className="mx-auto bg-white w-64  h-24 rounded-2xl flex justify-center items-center shadow-sm">
+    <div className="">
       <svg
         ref={graphRef}
         className="eth block rounded-xl"
@@ -85,11 +90,11 @@ const MiniGraph = React.memo(({ setLimitPrice, limitPrice, data }) => {
         stroke="blue"
         fill="rgba(0, 0, 255, .2)"
       ></svg>
-      <p ref={toolTipRef} className="text-xs text-center text-gray-600 w-12">
+      <p ref={toolTipRef} className="text-xs text-left pl-1 text-gray-600">
         {formatDate(new Date(mostRecentData.date))}
       </p>
     </div>
   );
-});
+};
 
 export default MiniGraph;

@@ -2,22 +2,18 @@ import Head from "next/head";
 
 import React, { useEffect, useRef, useState } from "react";
 import { Listbox, Transition } from "@headlessui/react";
-const speed = ["Slow (Recommended)", "Average", "Fast", "Instant"];
 
 import MiniGraph from "../components/MiniGraph";
 import HorizontalTabSelect from "../components/HorizontalTabSelect";
+import VerticalTabSelect from "../components/VerticalTabSelect";
 import testPriceData from "../sampledata.json";
+import samplePriceData from "../sampleprice.js";
+import PhoneInput from "../components/PhoneInput";
+import { getETH_USDT, getGas } from "../util/getData";
 
-const weiToGwei = (n) => n / 10e9;
+const weiToGwei = (n) => n / 1e9;
 const roundto2decimalplaces = (n) => Math.round(n * 100) / 100;
-
-const data = testPriceData.body.aggregations.hour_bucket.buckets.map(
-  ({ key_as_string, avgGasDay, percentilesDay }) => ({
-    date: key_as_string,
-    // convert wei to gwi
-    value: roundto2decimalplaces(weiToGwei(percentilesDay.values["50.0"])),
-  })
-);
+const roundto3decimalplaces = (n) => Math.round(n * 1000) / 1000;
 
 export async function getServerSideProps(context) {
   return {
@@ -25,30 +21,39 @@ export async function getServerSideProps(context) {
   };
 }
 
+const transactions = [
+  { name: "ETH Transfer", gasCost: 21000 },
+  { name: "ERC20 Transfer", gasCost: 52000 },
+  { name: "Uniswap Trade", gasCost: 130000 },
+  { name: "Opensea Registry", gasCost: 391402 },
+  { name: "Zora Mint", gasCost: 554136 },
+];
+
+// var samplePriceData = samplePriceData.map
+
+// Index to array based on common 1 year ago start date
+
+const gweiToUSDT = (g, date) => {};
+
 const currencies = {
-  Gwei: { sm: "g", placeholder: "0" },
   ETH: { sm: "Ξ", placeholder: "0.0" },
-  USD: { sm: "$", placeholder: "0.00" },
+  USDT: { sm: "₮", placeholder: "0.00" },
+  Gwei: { sm: "g", placeholder: "0" },
 };
 
-const TR = ({ name, setLimitPrice, currencySelected, setCurrencySelected }) => {
-  // const data = [
-  //   { name: "ETH", date: "2017-01-01", value: 8.3 },
-  //   { name: "ETH", date: "2017-02-01", value: 10.57 },
-  //   { name: "ETH", date: "2017-03-01", value: 15.73 },
-  //   { name: "ETH", date: "2017-04-01", value: 49.51 },
-  //   { name: "ETH", date: "2017-05-01", value: 85.69 },
-  //   { name: "ETH", date: "2017-06-01", value: 226.51 },
-  //   { name: "ETH", date: "2017-07-01", value: 246.65 },
-  //   { name: "ETH", date: "2017-08-01", value: 213.87 },
-  //   { name: "ETH", date: "2017-09-01", value: 386.61 },
-  //   { name: "ETH", date: "2017-10-01", value: 303.56 },
-  //   { name: "ETH", date: "2017-11-01", value: 298.21 },
-  // ];
+const TR = ({ transaction, price, setLimitPrice, currencySelected }) => {
+  const { name, gasCost } = transaction;
 
-  const mostRecentPrice = data[data.length - 1].value;
-  const [price, setPrice] = useState(mostRecentPrice);
-  const [lastPrice, setLastPrice] = useState(0);
+  const conversionRate =
+    // Also need to ungwei-ify for USDT because we're using the ETH conversion rate
+    currencySelected === "ETH" || currencySelected === "USDT" ? 1e9 : 1;
+
+  let value = price == null ? "-" : (price * gasCost) / conversionRate;
+  if (currencySelected !== "USDT") {
+    value = roundto3decimalplaces(value);
+  } else {
+    value = roundto2decimalplaces(value);
+  }
 
   return (
     <>
@@ -56,83 +61,137 @@ const TR = ({ name, setLimitPrice, currencySelected, setCurrencySelected }) => {
         {name}
       </td>
 
-      <td className="px-3 py-1.5 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium"></td>
-      <td className="px-3 py-1.5 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
-        <button className="w-12">{price}</button>
+      {/* <td className="px-3 py-1.5 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium"></td> */}
+      <td className="whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
+        <button
+          className="focus:outline-none"
+          onClick={() => setLimitPrice(value)}
+        >
+          {value}
+        </button>
       </td>
     </>
   );
 };
 
-const ConversionTable = ({
-  currencies,
-  // For later side-effect of deselecting price
+var priceDataCache = {};
+
+const ConversionPane = ({
+  limitPrice,
   setLimitPrice,
   currencySelected,
   setCurrencySelected,
+  speed,
 }) => {
-  const transactions = [
-    { name: "Compound Deposit" },
-    { name: "Uniswap Trade" },
-    { name: "ERC20 Approval" },
-    { name: "ERC20 Transfer" },
-    { name: "ETH Transfer" },
-  ];
+  const [lastPrice, setLastPrice] = useState(null);
+  const [timeFrameSelected, setTimeFrameSelected] = useState("1W");
+  const [data, setData] = useState([{ date: "0", value: 0 }]);
+  const [previewPrice, setPreviewPrice] = useState(data[0]);
 
-  const [currency, setCurrency] = useState("Gwei");
-  const [lastPrice, setLastPrice] = useState(0);
+  useEffect(async () => {
+    let pricePoints;
+    if (priceDataCache[timeFrameSelected]) {
+      pricePoints = priceDataCache[timeFrameSelected];
+    } else {
+      pricePoints = await getGas(timeFrameSelected);
+      // if (timeFrameSelected !== "1D")
+      priceDataCache[timeFrameSelected] = pricePoints;
+    }
+
+    pricePoints = pricePoints.map(({ time, med, min }) => ({
+      date: time,
+      // convert wei to gwi
+      value: roundto3decimalplaces(weiToGwei(med)),
+    }));
+
+    if (currencySelected === "USDT") {
+      let conversions;
+      const queryString = `ETH_USDT-${timeFrameSelected}`;
+      if (priceDataCache[queryString]) {
+        conversions = priceDataCache[queryString];
+      } else {
+        conversions = await getETH_USDT(timeFrameSelected);
+        priceDataCache[queryString] = conversions;
+      }
+
+      pricePoints.forEach(
+        (e, i) => (e.value *= conversions[i].weightedAverage)
+      );
+    }
+
+    // if first fetch
+    if (data.length === 1) {
+      setPreviewPrice(pricePoints[pricePoints.length - 1].value);
+    }
+    setData(pricePoints);
+  }, [currencySelected, timeFrameSelected, speed]);
+
+  // const data2 = data.map(({ date, value }) => ({ date, value: value ** 2 }));
 
   return (
     <div>
       <div className="flex flex-col">
-        <div className="-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-          <div className="align-middle inline-block min-w-full shadow overflow-hidden rounded-lg border-b border-gray-200">
-            <div className="mx-auto bg-gray-50 py-2">
-              <MiniGraph
-                setLimitPrice={setLimitPrice}
-                lastPrice={lastPrice}
-                setLastPrice={setLastPrice}
-                data={data}
-              />
+        <div className="-my-2 py-2 overflow-x-auto sm:px-6 lg:-mx-8 lg:px-8">
+          <div
+            className="align-middle inline-block min-w-full md:shadow overflow-hidden rounded-lg 
+          border md:border-b md:border-l-0 md:border-r-0 md:border-t-0
+          border-gray-200"
+          >
+            <div className="mx-auto bg-gray-50 py-2 px-5">
+              <div className="mx-auto bg-white w-64 rounded-2xl shadow-sm">
+                <div className="flex justify-between py-3 px-2.5">
+                  <MiniGraph
+                    setPrice={setPreviewPrice}
+                    lastPrice={lastPrice}
+                    setLastPrice={setLastPrice}
+                    data={data}
+                  />
+                  <div className="flex items-center">
+                    <VerticalTabSelect
+                      elements={["1D", "1W", "6M"]}
+                      selectedElement={timeFrameSelected}
+                      setSelectedElement={setTimeFrameSelected}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
             <table className="min-w-full border-t border-gray-200 ">
               <thead>
                 <tr>
                   <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                    Name
+                    Transaction
                   </th>
-                  <th className="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  {/* <th className="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
                     Data
-                  </th>
+                  </th> */}
                   <th className="px-1 py-3 border-b border-gray-200 bg-gray-50 text-center text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                    Price
+                    Cost
                   </th>
                 </tr>
               </thead>
 
               <tbody className="bg-white">
-                {transactions.map(({ name }, i) => (
-                  <tr className={i % 2 == 1 ? "bg-gray-50" : ""} key={name}>
+                {transactions.map((transaction, i) => (
+                  <tr
+                    className={i % 2 == 1 ? "bg-gray-50" : ""}
+                    key={transaction.name}
+                  >
                     <TR
-                      name={name}
+                      transaction={transaction}
+                      price={previewPrice}
                       setLimitPrice={setLimitPrice}
                       currencySelected={currencySelected}
-                      setCurrencySelected={setCurrencySelected}
                     />
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="flex justify-between py-2 px-1">
-              <HorizontalTabSelect
-                elements={["1M", "1W", "1D"]}
-                selectedElement={"1M"}
-                setSelectedElement={setCurrency}
-              />
+            <div className="flex justify-between flex-row-reverse  py-2 px-1">
               <HorizontalTabSelect
                 elements={Object.keys(currencies)}
-                selectedElement={currency}
-                setSelectedElement={setCurrency}
+                selectedElement={currencySelected}
+                setSelectedElement={setCurrencySelected}
               />
             </div>
           </div>
@@ -142,50 +201,37 @@ const ConversionTable = ({
   );
 };
 
-const ConversionPane = ({
-  limitPrice,
-  setLimitPrice,
-  currencySelected,
-  setCurrencySelected,
-}) => {
-  const [currency, setCurrency] = useState("Gwei");
-  const [lastPrice, setLastPrice] = useState(0);
-
-  return (
-    <>
-      <div className="pt-2">
-        <ConversionTable
-          currencies={currencies}
-          currency={currency}
-          setLimitPrice={setLimitPrice}
-          currencySelected={currencySelected}
-          setCurrencySelected={setCurrencySelected}
-        />
-      </div>
-    </>
-  );
-};
-
-const BasicInput = () => (
+const BasicInput = ({ label, placeholder = "", autocomplete = "" }) => (
   <div>
-    <label for="tel" className="block text-sm font-medium text-gray-700">
-      Phone #
-    </label>
+    <label className="block text-sm font-medium text-gray-700">{label}</label>
     <div className="mt-1 relative rounded-md shadow-sm">
       <input
         type="text"
-        name="tel"
-        id="tel"
-        className="focus:ring-indigo-500 focus:border-indigo-500 block w-full  sm:text-sm border-gray-300 rounded-md"
-        placeholder="000-000-0000"
+        name={autocomplete}
+        autocomplete={autocomplete}
+        className="transition duration-200 focus:ring-indigo-500 focus:border-indigo-500 block w-full  sm:text-sm border-gray-300 rounded-md"
+        placeholder={placeholder}
       />
     </div>
   </div>
 );
 
-const MoneyInput = ({ limitPrice, setLimitPrice }) => {
+const MoneyInput = ({
+  limitPrice,
+  setLimitPrice,
+  currencySelected,
+  setCurrencySelected,
+}) => {
   const defaultSymbol = "Gwei";
-  const [selected, setSelected] = useState(defaultSymbol);
+
+  const [animated, setAnimated] = useState(false);
+  const timeout = useRef(null);
+  useEffect(() => {
+    if (timeout) clearTimeout(timeout);
+    setAnimated(true);
+    setTimeout(() => setAnimated(false), 250);
+  }, [limitPrice]);
+
   return (
     <div>
       <label for="price" className="block text-sm font-medium text-gray-700">
@@ -194,15 +240,18 @@ const MoneyInput = ({ limitPrice, setLimitPrice }) => {
       <div className="mt-1 relative rounded-md shadow-sm">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <span className="text-gray-500 sm:text-sm">
-            {currencies[selected].sm}
+            {currencies[currencySelected].sm}
           </span>
         </div>
         <input
           type="text"
           name="price"
           id="price"
-          className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
-          placeholder={currencies[selected].placeholder}
+          className={`${animated ? "ring-1 ring-blue-300" : ""}
+          transition duration-300 focus:ring-indigo-500 focus:border-indigo-500 
+                      block w-full pl-7 pr-12 
+                      sm:text-sm border-gray-300 rounded-md`}
+          placeholder={currencies[currencySelected].placeholder}
           value={limitPrice}
           onInput={(e) => setLimitPrice(e.target.value)}
         />
@@ -214,7 +263,8 @@ const MoneyInput = ({ limitPrice, setLimitPrice }) => {
             id="currency"
             name="currency"
             className="focus:ring-indigo-500 focus:border-indigo-500 h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md"
-            onChange={(e) => setSelected(e.target.value)}
+            onChange={(e) => setCurrencySelected(e.target.value)}
+            value={currencySelected}
           >
             {Object.keys(currencies).map((sym) => (
               <option key={sym}>{sym}</option>
@@ -226,17 +276,15 @@ const MoneyInput = ({ limitPrice, setLimitPrice }) => {
   );
 };
 
-const CurrencySelect = () => {
-  const [selectedPerson, setSelectedPerson] = useState(speed[0]);
-
+const DropdownSelect = ({ options, selected, setSelected }) => {
   return (
     <div className="flex items-center justify-center">
       <div className="w-full max-w-72">
         <Listbox
           as="div"
           className="space-y-1"
-          value={selectedPerson}
-          onChange={setSelectedPerson}
+          value={selected}
+          onChange={setSelected}
         >
           {({ open }) => (
             <>
@@ -246,7 +294,7 @@ const CurrencySelect = () => {
               <div className="relative">
                 <span className="inline-block w-full rounded-md shadow-sm">
                   <Listbox.Button className="cursor-default relative w-full rounded-md border border-gray-300 bg-white pl-3 pr-10 py-2 text-left focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition ease-in-out duration-150 sm:text-sm sm:leading-5">
-                    <span className="block truncate">{selectedPerson}</span>
+                    <span className="block truncate">{selected}</span>
                     <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                       <svg
                         className="h-5 w-5 text-gray-400"
@@ -276,8 +324,8 @@ const CurrencySelect = () => {
                     static
                     className="max-h-60 rounded-md py-1 text-base leading-6 shadow-xs overflow-auto focus:outline-none sm:text-sm sm:leading-5"
                   >
-                    {speed.map((person) => (
-                      <Listbox.Option key={person} value={person}>
+                    {options.map((o) => (
+                      <Listbox.Option key={o} value={o}>
                         {({ selected, active }) => (
                           <div
                             className={`${
@@ -291,7 +339,7 @@ const CurrencySelect = () => {
                                 selected ? "font-semibold" : "font-normal"
                               } block truncate`}
                             >
-                              {person}
+                              {o}
                             </span>
                             {selected && (
                               <span
@@ -329,19 +377,52 @@ const CurrencySelect = () => {
 };
 
 const SubmitButton = () => (
-  <span className="inline-flex rounded-md shadow-sm">
+  // <span className="inline-flex rounded-md shadow-sm">
+  //   <button
+  //     type="button"
+  //     className="inline-flex items-center px-4 py-2
+  //     border border-transparent text-sm leading-5 font-medium r
+  //     ounded-md text-white bg-blue-500 hover:bg-blue-900 focus:outline-none focus:border-red-700 focus:shadow-outline-red active:bg-red-700 transition ease-in-out duration-150"
+  //   >
+  //     Submit
+  //   </button>
+  // </span>
+
+  <span class="inline-flex rounded-md shadow-sm">
     <button
       type="button"
-      className="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-800 hover:bg-blue-900 focus:outline-none focus:border-red-700 focus:shadow-outline-red active:bg-red-700 transition ease-in-out duration-150"
+      class="inline-flex items-center px-4 py-2 border border-transparent 
+      text-sm leading-5 font-medium rounded-md text-white 
+      bg-blue-600 hover:bg-blue-500 focus:outline-none focus:border-blue-700 
+      focus:shadow-outline-blue active:bg-blue-700 transition ease-in-out duration-150"
     >
-      Submit
+      <div className="h-5 w-5">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5 -ml-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+          />
+        </svg>
+      </div>
+      <p className="pl-0.5">Submit</p>
     </button>
   </span>
 );
 
 export default function Home() {
   const [limitPrice, setLimitPrice] = useState("");
-  const [currencySelected, setCurrencySelected] = useState("");
+  const [currencySelected, setCurrencySelected] = useState("ETH");
+
+  const speeds = ["Rapid (15s)", "Fast (1min)"];
+  const [speed, setSpeed] = useState(speeds[0]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 overflow-x-hidden	">
@@ -351,45 +432,62 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
 
-      <main className="flex flex-col items-center justify-center flex-1 px-20 text-center">
-        <h1 className="text-6xl font-bold">Gas Time</h1>
+      <main className="flex flex-col items-center justify-center flex-1  text-center pt-14 sm:pt-0">
+        <h1 className="text-4xl sm:text-6xl font-bold">Gas Time</h1>
 
-        <p className="mt-3 text-2xl">
+        <p className="mt-3 text-lg sm:text-2xl">
           Get text alerts when gas falls below a limit
         </p>
 
-        <div className="flex flex-wrap  items-center justify-around flex- max-w-4xl mt-6 sm:w-full">
-          <div className="p-6 mt-6 text-left border w-96 rounded-xl ">
+        <div className="flex flex-wrap items-center justify-around mt-6">
+          {/* <div className="p-6 mt-6 text-left border w-96 rounded-xl ">
+            <div className="pt-4"> */}
+          <ConversionPane
+            limitPrice={limitPrice}
+            setLimitPrice={setLimitPrice}
+            currencySelected={currencySelected}
+            setCurrencySelected={setCurrencySelected}
+            speed={speed}
+          />
+          {/* </div>
+          </div> */}
+          <div className="flex flex-col justify-center 
+                          p-6 mt-6 lg:mt-0 text-left border 
+                          md:w-96 md:self-stretch rounded-xl 
+                          md:ml-4">
+            <div className="">
+              {/* <BasicInput
+                label="Phone # (include country code)"
+                autocomplete="tel"
+              /> */}
+              <PhoneInput />
+            </div>
             <div className="pt-4">
-              <ConversionPane
+              <MoneyInput
                 limitPrice={limitPrice}
                 setLimitPrice={setLimitPrice}
                 currencySelected={currencySelected}
                 setCurrencySelected={setCurrencySelected}
               />
             </div>
-          </div>
-          <div className="p-6 mt-6 text-left border w-96 rounded-xl md:mx-4">
             <div className="pt-4">
-              <BasicInput />
+              {/* <DropdownSelect
+                options={speeds}
+                selected={speed}
+                setSelected={setSpeed}
+              /> */}
             </div>
-            <div className="pt-4">
-              <MoneyInput
-                limitPrice={limitPrice}
-                setLimitPrice={setLimitPrice}
-              />
-            </div>
-            <div className="pt-4">
-              <CurrencySelect />
-            </div>
-            <div className="pt-8 mx-auto w-20">
+            <div className="pt-8 flex justify-center ">
               <SubmitButton />
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="flex items-center justify-center w-full h-24 border-t text-xs text-gray-600">
+      <footer className="flex items-center justify-center w-full h-24 border-t text-center text-xs text-gray-600 mt-8 md:mt-0">
+        All figures provided are estimations
+        <br />
+        <br />
         Tips: 0x288fccf4af11928e62eab282152f2987756188c0
       </footer>
     </div>
