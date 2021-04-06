@@ -6,8 +6,6 @@ import { Listbox, Transition } from "@headlessui/react";
 import MiniGraph from "../components/MiniGraph";
 import HorizontalTabSelect from "../components/HorizontalTabSelect";
 import VerticalTabSelect from "../components/VerticalTabSelect";
-import testPriceData from "../sampledata.json";
-import samplePriceData from "../sampleprice.js";
 import PhoneInput from "../components/PhoneInput";
 import { getETH_USDT, getGas } from "../util/getData";
 
