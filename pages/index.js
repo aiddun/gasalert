@@ -87,6 +87,7 @@ const ConversionPane = ({
   const [timeFrameSelected, setTimeFrameSelected] = useState("1W");
   const [data, setData] = useState([{ date: "0", value: 0 }]);
   const [previewPrice, setPreviewPrice] = useState(data[0]);
+  // const [dateSelected, setDateSelected] = useState(null);
 
   useEffect(async () => {
     let pricePoints;
@@ -376,7 +377,7 @@ const DropdownSelect = ({ options, selected, setSelected }) => {
   );
 };
 
-const SubmitButton = () => (
+const SubmitButton = ({ onClick }) => (
   // <span className="inline-flex rounded-md shadow-sm">
   //   <button
   //     type="button"
@@ -395,6 +396,7 @@ const SubmitButton = () => (
       text-sm leading-5 font-medium rounded-md text-white 
       bg-blue-600 hover:bg-blue-500 focus:outline-none focus:border-blue-700 
       focus:shadow-outline-blue active:bg-blue-700 transition ease-in-out duration-150"
+      onClick={onClick}
     >
       <div className="h-5 w-5">
         <svg
@@ -420,6 +422,7 @@ const SubmitButton = () => (
 export default function Home() {
   const [limitPrice, setLimitPrice] = useState("");
   const [currencySelected, setCurrencySelected] = useState("ETH");
+  const [submitted, setSubmitted] = useState(false);
 
   const speeds = ["Rapid (15s)", "Fast (1min)"];
   const [speed, setSpeed] = useState(speeds[0]);
@@ -451,10 +454,12 @@ export default function Home() {
           />
           {/* </div>
           </div> */}
-          <div className="flex flex-col justify-center 
+          <div
+            className="flex flex-col justify-center 
                           p-6 mt-6 lg:mt-0 text-left border 
                           md:w-96 md:self-stretch rounded-xl 
-                          md:ml-4">
+                          md:ml-4"
+          >
             <div className="">
               {/* <BasicInput
                 label="Phone # (include country code)"
@@ -478,8 +483,9 @@ export default function Home() {
               /> */}
             </div>
             <div className="pt-8 flex justify-center ">
-              <SubmitButton />
+              <SubmitButton onClick={() => setSubmitted(true)} />
             </div>
+            {submitted && <p className="text-center">not added yet lol, sorry!</p>}
           </div>
         </div>
       </main>
