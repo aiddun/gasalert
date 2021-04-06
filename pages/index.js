@@ -419,7 +419,7 @@ const SubmitButton = ({ onClick }) => (
 
 export default function Home() {
   const [limitPrice, setLimitPrice] = useState("");
-  const [currencySelected, setCurrencySelected] = useState("ETH");
+  const [currencySelected, setCurrencySelected] = useState("USDT");
   const [submitted, setSubmitted] = useState(false);
 
   const speeds = ["Rapid (15s)", "Fast (1min)"];
