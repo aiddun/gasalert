@@ -44,14 +44,19 @@ const TR = ({ transaction, price, setLimitPrice, currencySelected }) => {
 
   const conversionRate =
     // Also need to ungwei-ify for USDT because we're using the ETH conversion rate
-    currencySelected === "ETH" || currencySelected === "USDT" ? 1e9 : 1;
+    currencySelected === "ETH" ? 1e9 : 1;
 
   let value = price == null ? "-" : (price * gasCost) / conversionRate;
-  if (currencySelected !== "USDT") {
+  if (currencySelected === "ETH") {
     value = roundto3decimalplaces(value);
-  } else {
+  } else if (currencySelected === "USDT") {
     value = roundto2decimalplaces(value);
+  } else {
+    // Gwei
+    value = Math.round(value);
   }
+
+  console.table({ value, gasCost, price });
 
   return (
     <>
@@ -114,7 +119,7 @@ const ConversionPane = ({
       }
 
       pricePoints.forEach(
-        (e, i) => (e.value *= conversions[i].weightedAverage)
+        (e, i) => (e.value *= conversions[i].weightedAverage / 1e9)
       );
     }
 
@@ -144,6 +149,7 @@ const ConversionPane = ({
                     lastPrice={lastPrice}
                     setLastPrice={setLastPrice}
                     data={data}
+                    currencySelected={currencySelected}
                   />
                   <div className="flex items-center">
                     <VerticalTabSelect
@@ -429,7 +435,7 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen py-2 overflow-x-hidden	">
       <Head>
         <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
+        {/* <link rel="icon" href="/favicon.ico" /> */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
 
@@ -483,7 +489,9 @@ export default function Home() {
             <div className="pt-8 flex justify-center ">
               <SubmitButton onClick={() => setSubmitted(true)} />
             </div>
-            {submitted && <p className="text-center">not added yet lol, sorry!</p>}
+            {submitted && (
+              <p className="text-center">not added yet lol, sorry!</p>
+            )}
           </div>
         </div>
       </main>

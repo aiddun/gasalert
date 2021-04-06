@@ -3,7 +3,13 @@ import sparkline from "./Sparkline";
 import VerticalTabSelect from "./VerticalTabSelect";
 
 // Memoize bc we have non-declarative components and we dont want to remount on a key change
-const MiniGraph = ({ setPrice, limitPrice, data, display = true }) => {
+const MiniGraph = ({
+  setPrice,
+  limitPrice,
+  data,
+  currencySelected,
+  display = true,
+}) => {
   const formatDate = (date) =>
     new Date(date).toLocaleString(undefined, {
       month: "short",
@@ -38,8 +44,10 @@ const MiniGraph = ({ setPrice, limitPrice, data, display = true }) => {
   useEffect(() => {
     graphRef.current.textContent = "";
     const mostRecentData = data[data.length - 1];
+    // For initial data fetch
     if (!lastDate.current) lastDate.current = mostRecentData.date;
-    if (!lastSelectedPrice.current) lastSelectedPrice.current = mostRecentData.value;
+    if (!lastSelectedPrice.current)
+      lastSelectedPrice.current = mostRecentData.value;
     const options = {
       displayDate: lastDate.current,
       onmousemove: (event, datapoint) => {
@@ -78,6 +86,23 @@ const MiniGraph = ({ setPrice, limitPrice, data, display = true }) => {
 
     sparkline(graphRef.current, data, options);
   }, [data]);
+
+  useEffect(() => {
+    const mostRecentData = data[data.length - 1];
+    // debugger;
+    console.log(data);
+    console.log(lastDate.current);
+    const equivelantPrice = data.find(({ date }) => {
+      return date === lastDate.current;
+    });
+
+    const newPrice = equivelantPrice
+      ? equivelantPrice.value
+      : mostRecentData.value;
+    lastSelectedPrice.current = newPrice;
+    setPrice(newPrice);
+    // also refresh on data because of unloaded data
+  }, [currencySelected, data]);
 
   return (
     <div className="">
