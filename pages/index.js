@@ -36,7 +36,7 @@ const gweiToUSDT = (g, date) => {};
 const currencies = {
   USDT: { sm: "$", placeholder: "0.00" },
   ETH: { sm: "Ξ", placeholder: "0.0" },
-  Gwei: { sm: "g", placeholder: "0" },
+  Gwei: { sm: "", placeholder: "0" },
 };
 
 const TR = ({ transaction, price, setLimitPrice, currencySelected }) => {
@@ -56,7 +56,7 @@ const TR = ({ transaction, price, setLimitPrice, currencySelected }) => {
     value = Math.round(value);
   }
 
-  console.table({ value, gasCost, price });
+  const { sm } = currencies[currencySelected];
 
   return (
     <>
@@ -70,7 +70,7 @@ const TR = ({ transaction, price, setLimitPrice, currencySelected }) => {
           className="focus:outline-none"
           onClick={() => setLimitPrice(value)}
         >
-          {value}
+          {`${sm}${value}`}
         </button>
       </td>
     </>
@@ -88,7 +88,7 @@ const ConversionPane = ({
 }) => {
   const [lastPrice, setLastPrice] = useState(null);
   const [timeFrameSelected, setTimeFrameSelected] = useState("1W");
-  const [data, setData] = useState([{ date: "0", value: 0 }]);
+  const [data, setData] = useState([{ date: 0, gwei: 0, value: 0 }]);
   const [previewPrice, setPreviewPrice] = useState(data[0]);
   // const [dateSelected, setDateSelected] = useState(null);
 
@@ -102,11 +102,15 @@ const ConversionPane = ({
       priceDataCache[timeFrameSelected] = pricePoints;
     }
 
-    pricePoints = pricePoints.map(({ time, med, min }) => ({
-      date: time,
-      // convert wei to gwi
-      value: roundto3decimalplaces(weiToGwei(med)),
-    }));
+    pricePoints = pricePoints.map(({ time, med, min }) => {
+      const val = roundto3decimalplaces(weiToGwei(med));
+      return {
+        date: time,
+        // convert wei to gwi
+        gwei: Math.round(val),
+        value: val,
+      };
+    });
 
     if (currencySelected === "USDT") {
       let conversions;
@@ -146,8 +150,9 @@ const ConversionPane = ({
                 <div className="flex justify-between py-3 px-2.5">
                   <MiniGraph
                     setPrice={setPreviewPrice}
-                    lastPrice={lastPrice}
-                    setLastPrice={setLastPrice}
+                    limitGweiPrice={limitPrice}
+                    setLimitGweiPrice={setLimitPrice}
+                    previewPrice={previewPrice}
                     data={data}
                     currencySelected={currencySelected}
                   />
@@ -220,6 +225,46 @@ const BasicInput = ({ label, placeholder = "", autocomplete = "" }) => (
     </div>
   </div>
 );
+
+const GweiInput = ({ limitPrice, setLimitPrice }) => {
+  const [animated, setAnimated] = useState(false);
+  const timeout = useRef(null);
+  useEffect(() => {
+    if (timeout) clearTimeout(timeout);
+    setAnimated(true);
+    setTimeout(() => setAnimated(false), 250);
+  }, [limitPrice]);
+
+  return (
+    <div>
+      <label for="price" className="block text-sm font-medium text-gray-700">
+        Price
+      </label>
+      <div className="mt-1 relative rounded-md shadow-sm">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <span className="text-gray-500 sm:text-sm">g</span>
+        </div>
+        <input
+          type="text"
+          name="price"
+          id="price"
+          className={`${animated ? "ring-1 ring-blue-300" : ""}
+          transition duration-300 focus:ring-indigo-500 focus:border-indigo-500 
+                      block w-full pl-7 pr-12 
+                      sm:text-sm border-gray-300 rounded-md`}
+          placeholder={"0"}
+          value={limitPrice}
+          onInput={(e) => setLimitPrice(e.target.value)}
+        />
+        <div className="absolute inset-y-0 right-0 flex items-center">
+          <p className=" pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md">
+            gwei
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const MoneyInput = ({
   limitPrice,
@@ -475,7 +520,7 @@ export default function Home() {
               <PhoneInput />
             </div>
             <div className="pt-4">
-              <MoneyInput
+              <GweiInput
                 limitPrice={limitPrice}
                 setLimitPrice={setLimitPrice}
                 currencySelected={currencySelected}

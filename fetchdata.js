@@ -60,7 +60,6 @@ const search = async () => {
     size: 0,
   });
 
-  console.log(JSON.stringify(result));
 };
 
 search();

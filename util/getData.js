@@ -70,8 +70,6 @@ export const getETH_USDT = async (period) => {
     method: "GET",
   }).then((res) => res.json());
 
-  console.log(res);
-
   if (period === "1D" || period === "1W") {
     // Transform from 5min api period to 10 minute period
     // Or 30 min to 60 min

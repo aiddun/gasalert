@@ -8,7 +8,6 @@ const PhoneInput = () => {
   const [country, setCountry] = useState("US");
 
   const displayCountry = `${country} ${areaCodes[country]}`;
-  console.log({ width: `${displayCountry.length * 10}rem` });
 
   return (
     <div>
