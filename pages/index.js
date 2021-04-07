@@ -35,11 +35,21 @@ const gweiToUSDT = (g, date) => {};
 
 const currencies = {
   USDT: { sm: "$", placeholder: "0.00" },
-  ETH: { sm: "Ξ", placeholder: "0.0" },
+  ETH: {
+    // sm: "Ξ",
+    sm: "",
+    placeholder: "0.0",
+  },
   Gwei: { sm: "", placeholder: "0" },
 };
 
-const TR = ({ transaction, price, setLimitPrice, currencySelected }) => {
+const TR = ({
+  transaction,
+  price,
+  setLimitPrice,
+  currencySelected,
+  limitPrice,
+}) => {
   const { name, gasCost } = transaction;
 
   const conversionRate =
@@ -66,12 +76,12 @@ const TR = ({ transaction, price, setLimitPrice, currencySelected }) => {
 
       {/* <td className="px-3 py-1.5 whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium"></td> */}
       <td className="whitespace-no-wrap border-l text-center border-b border-gray-200 text-sm leading-3 font-medium">
-        <button
+        {/* <button
           className="focus:outline-none"
-          onClick={() => setLimitPrice(value)}
-        >
-          {`${sm}${value}`}
-        </button>
+          // onClick={() => setLimitPrice(limitPrice)}
+        > */}
+        {`${sm}${value}`}
+        {/* </button> */}
       </td>
     </>
   );
@@ -190,6 +200,7 @@ const ConversionPane = ({
                     <TR
                       transaction={transaction}
                       price={previewPrice}
+                      limitPrice={limitPrice}
                       setLimitPrice={setLimitPrice}
                       currencySelected={currencySelected}
                     />
