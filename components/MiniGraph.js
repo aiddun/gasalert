@@ -190,7 +190,7 @@ const MiniGraph = ({
           </button>
         </p>
 
-        <p ref={toolTipRef} className="text-xs text-left text-gray-600">
+        <p ref={toolTipRef} className="text-xs text-gray-600 text-right">
           {displayDate}
         </p>
       </div>
