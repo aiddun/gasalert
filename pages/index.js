@@ -165,6 +165,7 @@ const ConversionPane = ({
                     previewPrice={previewPrice}
                     data={data}
                     currencySelected={currencySelected}
+                    timeFrameSelected={timeFrameSelected}
                   />
                   <div className="flex items-center">
                     <VerticalTabSelect
@@ -465,6 +466,7 @@ const SubmitButton = ({ onClick, disabled, title = "Submit", loading }) => (
     >
       <div className="h-5 w-5">
         {loading ? (
+          // Loading icon
           <svg
             class="animate-spin -ml-1 h-5 w-5 text-white"
             xmlns="http://www.w3.org/2000/svg"
@@ -521,10 +523,6 @@ export default function Home() {
   const [telephone, setTelephone] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  console.log(
-    `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_CAPTCHA_SITE}`
-  );
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 overflow-x-hidden	">

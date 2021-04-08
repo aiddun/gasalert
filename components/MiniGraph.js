@@ -5,6 +5,29 @@ import VerticalTabSelect from "./VerticalTabSelect";
 const roundto2decimalplaces = (n) => Math.round(n * 100) / 100;
 const roundto3decimalplaces = (n) => Math.round(n * 1000) / 1000;
 
+const SpinLoader = ({ className }) => (
+  <svg
+    className={"animate-spin -ml-1 h-5 w-5 text-blue-400 " + className}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      stroke-width="4"
+    ></circle>
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    ></path>
+  </svg>
+);
+
 // Memoize bc we have non-declarative components and we dont want to remount on a key change
 const MiniGraph = ({
   setPrice,
@@ -15,6 +38,7 @@ const MiniGraph = ({
   currencySelected,
   display = true,
   limitGweiPrice,
+  timeFrameSelected,
 }) => {
   const formatDate = (date) =>
     new Date(date).toLocaleString(undefined, {
@@ -31,6 +55,8 @@ const MiniGraph = ({
   const [displayGweiPrice, setDisplayGweiPrice] = useState(
     lastSelectedGweiPrice
   );
+
+  const [loading, setLoading] = useState(false);
 
   const lastDate = useRef(null);
   const graphRef = useRef(null);
@@ -126,6 +152,7 @@ const MiniGraph = ({
     };
 
     sparkline(graphRef.current, data, options);
+    setLoading(false);
   }, [data]);
 
   useEffect(() => {
@@ -143,6 +170,10 @@ const MiniGraph = ({
 
     // also refresh on data because of unloaded data
   }, [currencySelected, data]);
+
+  useEffect(() => {
+    setLoading(true);
+  }, [currencySelected, timeFrameSelected]);
 
   const conversionRate =
     // Also need to ungwei-ify for USDT because we're using the ETH conversion rate
@@ -168,15 +199,20 @@ const MiniGraph = ({
 
   return (
     <div className="">
-      <svg
-        ref={graphRef}
-        className="eth block rounded-xl"
-        width="200"
-        height="70"
-        strokeWidth="2"
-        stroke="blue"
-        fill="rgba(0, 0, 255, .2)"
-      ></svg>
+      <div className="relative">
+        <svg
+          ref={graphRef}
+          className={`eth block rounded-xl ${loading ? "invisible" : ""}`}
+          width="200"
+          height="70"
+          strokeWidth="2"
+          stroke="blue"
+          fill="rgba(0, 0, 255, .2)"
+        ></svg>
+        <SpinLoader
+          className={`absolute top-1/3 left-1/2 ${loading ? "" : "hidden"}`}
+        />
+      </div>
       <div className="flex justify-between px-2">
         <p className="text-xs text-left text-gray-600">
           <button
@@ -186,7 +222,7 @@ const MiniGraph = ({
               setLimitGweiPrice(displayGweiPrice)
             }
           >
-            {`${displayGweiPrice} gwei`}
+            {loading ? "Loading..." : `${`${displayGweiPrice} gwei`}`}
           </button>
         </p>
 
