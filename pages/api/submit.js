@@ -46,7 +46,6 @@ export default async function submitAPI(req, res) {
         },
         { merge: true }
       );
-    console.log(resp);
     res.status(200).json({ error: false });
   } else {
     // Teapot. Sorry!
