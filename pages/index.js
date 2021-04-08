@@ -588,9 +588,10 @@ export default function Home() {
                         // .then((res) => res.json());
 
                         if (res.ok) {
+                          setError(false);
                           setSubmitted(true);
                         } else {
-                          setError("Sorry, captcha failed.");
+                          setError("Sorry, an error occured.");
                         }
                       });
                   });
