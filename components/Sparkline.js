@@ -178,10 +178,10 @@ export function sparkline(svg, entries, options) {
   };
 
   // override default behavior to highlight the date if applicable
-  const displayDate = options.displayDate;
-  const startIndex = entries.findIndex(({ date }) => date === displayDate);
-  const highlightPoint = datapoints[startIndex];
-  highlightPoint && setTicker(highlightPoint);
+  // const displayDate = options.displayDate;
+  // const startIndex = entries.findIndex(({ date }) => date === displayDate);
+  // const highlightPoint = datapoints[startIndex];
+  // highlightPoint && setTicker(highlightPoint);
 
   // also overrided feature. usually doesn't display
   // points at all if interactive mode is disabled (like it currently is)

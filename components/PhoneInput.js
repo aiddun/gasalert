@@ -1,7 +1,7 @@
 import { areaCodes } from "../util/areaCodes";
 import { useState } from "react";
 
-const PhoneInput = () => {
+const PhoneInput = ({ value, setValue }) => {
   const autocomplete = "Tel";
   const placeholder = "";
 
@@ -37,7 +37,7 @@ const PhoneInput = () => {
             }}
           >
             {Object.entries(areaCodes).map(([name, code]) => (
-              <option>{`${name} ${code}`}</option>
+              <option key={name}>{`${name} ${code}`}</option>
             ))}
           </select>
         </div>
@@ -56,6 +56,7 @@ const PhoneInput = () => {
             }rem`,
           }}
           placeholder={placeholder}
+          onChange={(e) => setValue(`${areaCodes[country]}${e.target.value}`)}
         />
       </div>
     </div>

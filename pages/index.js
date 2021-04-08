@@ -249,7 +249,7 @@ const GweiInput = ({ limitPrice, setLimitPrice }) => {
   return (
     <div>
       <label for="price" className="block text-sm font-medium text-gray-700">
-        Price
+        Price per gas unit
       </label>
       <div className="mt-1 relative rounded-md shadow-sm">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -437,7 +437,7 @@ const DropdownSelect = ({ options, selected, setSelected, name = "" }) => {
   );
 };
 
-const SubmitButton = ({ onClick }) => (
+const SubmitButton = ({ onClick, disabled, title = "Submit" }) => (
   // <span className="inline-flex rounded-md shadow-sm">
   //   <button
   //     type="button"
@@ -449,13 +449,18 @@ const SubmitButton = ({ onClick }) => (
   //   </button>
   // </span>
 
-  <span class="inline-flex rounded-md shadow-sm">
+  <span className="inline-flex rounded-md shadow-sm">
     <button
+      disabled={disabled}
       type="button"
-      class="inline-flex items-center px-4 py-2 border border-transparent 
-      text-sm leading-5 font-medium rounded-md text-white 
-      bg-blue-600 hover:bg-blue-500 focus:outline-none focus:border-blue-700 
-      focus:shadow-outline-blue active:bg-blue-700 transition ease-in-out duration-150"
+      className={`inline-flex items-center px-4 py-2 border border-transparent 
+      text-sm leading-5 font-medium rounded-md text-white
+       ${
+         disabled
+           ? "bg-blue-600 opacity-70 cursor-default"
+           : `bg-blue-600 hover:bg-blue-500 focus:outline-none focus:border-blue-700 
+              focus:shadow-outline-blue active:bg-blue-700 transition ease-in-out duration-150 `
+       }`}
       onClick={onClick}
     >
       <div className="h-5 w-5">
@@ -474,7 +479,7 @@ const SubmitButton = ({ onClick }) => (
           />
         </svg>
       </div>
-      <p className="pl-0.5">Submit</p>
+      <p className="pl-0.5">{title}</p>
     </button>
   </span>
 );
@@ -482,24 +487,34 @@ const SubmitButton = ({ onClick }) => (
 export default function Home() {
   const [limitPrice, setLimitPrice] = useState("");
   const [currencySelected, setCurrencySelected] = useState("USDT");
-  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState(false);
 
   const speeds = ["Rapid (15s)", "Fast (1min)"];
   const [speed, setSpeed] = useState(speeds[0]);
 
-  const cooldowns = ["30 Min", "1 Day", "3 Days", "1 Time Only"];
+  const cooldowns = ["30 Mins", "1 Day", "3 Days", "1 Time Only"];
   const [cooldown, setCooldown] = useState(cooldowns[3]);
+
+  const [telephone, setTelephone] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  console.log(
+    `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_CAPTCHA_SITE}`
+  );
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 overflow-x-hidden	">
       <Head>
-        <title>Create Next App</title>
+        <title>GasAlert</title>
         {/* <link rel="icon" href="/favicon.ico" /> */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script
+          src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_CAPTCHA_SITE}`}
+        ></script>
       </Head>
 
       <main className="flex flex-col items-center justify-center flex-1  text-center pt-14 sm:pt-0">
-        <h1 className="text-4xl sm:text-6xl font-bold">Gas Time</h1>
+        <h1 className="text-4xl sm:text-6xl font-bold">GasAlert</h1>
 
         <p className="mt-3 text-lg sm:text-2xl">
           Get text alerts when gas falls below a limit
@@ -528,7 +543,7 @@ export default function Home() {
                 label="Phone # (include country code)"
                 autocomplete="tel"
               /> */}
-              <PhoneInput />
+              <PhoneInput value={telephone} setValue={setTelephone} />
             </div>
             <div className="pt-4">
               <GweiInput
@@ -547,11 +562,42 @@ export default function Home() {
               />
             </div>
             <div className="pt-8 flex justify-center ">
-              <SubmitButton onClick={() => setSubmitted(true)} />
+              <SubmitButton
+                title={submitted ? "Submitted" : "Submit"}
+                disabled={telephone === "" || submitted}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  grecaptcha.ready(function () {
+                    grecaptcha
+                      .execute(process.env.NEXT_PUBLIC_CAPTCHA_SITE, {
+                        action: "submit",
+                      })
+                      .then(async (token) => {
+                        const res = await fetch("/api/submit", {
+                          body: JSON.stringify({
+                            token,
+                            cooldown,
+                            limitPrice,
+                            telephone,
+                          }),
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          method: "PUT",
+                        });
+                        // .then((res) => res.json());
+
+                        if (res.ok) {
+                          setSubmitted(true);
+                        } else {
+                          setError("Sorry, captcha failed.");
+                        }
+                      });
+                  });
+                }}
+              />
             </div>
-            {submitted && (
-              <p className="text-center">not added yet lol, sorry!</p>
-            )}
+            {error && error !== "" && <p className="text-center">{error}</p>}
           </div>
         </div>
       </main>
