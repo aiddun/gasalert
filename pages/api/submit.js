@@ -1,7 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 
-var admin = require("firebase-admin");
-
+import admin from "firebase-admin";
+import PhoneNumber from "awesome-phonenumber";
 var serviceAccount = require("../../fire-admin.json");
 
 if (!admin.apps.length) {
@@ -13,6 +13,15 @@ if (!admin.apps.length) {
 
 export default async function submitAPI(req, res) {
   const { token, cooldown, limitPrice, telephone } = req.body;
+
+  const pn = new PhoneNumber(telephone);
+
+  if (!pn.isValid()) {
+    res.status(418).json({ error: "number" });
+    return;
+  }
+
+  const formattedNumber = pn.getNumber();
 
   const gresponse = await fetch(
     "https://www.google.com/recaptcha/api/siteverify",
@@ -30,33 +39,49 @@ export default async function submitAPI(req, res) {
   const { success, score } = json;
 
   if (success && score >= 0.6) {
-    const docRef = admin.firestore().collection("users").doc(telephone);
-    const doc = await docRef.get();
-    const data = doc.data();
+    const docRef = admin.firestore().collection("users").doc(formattedNumber);
 
-    if (!doc.exists || data.count < 5) {
-      docRef.set(
-        {
-          ...(!doc.exists && {
-            telephone,
-            created: admin.firestore.FieldValue.serverTimestamp(),
-          }),
-          [limitPrice]: {
-            limitPrice,
-            cooldown,
-            created: admin.firestore.FieldValue.serverTimestamp(),
+    // transactions baby
+    try {
+      const r = await admin.firestore().runTransaction(async (t) => {
+        const doc = await t.get(docRef);
+        const data = doc.data();
+
+        const { alerts } = data;
+        // do fancy destructuring to avoid trying to key undefined
+        const count = Object.keys({ ...alerts }).length;
+
+        if (doc.exists && count >= 5 && !(limitPrice in { ...alerts })) {
+          console.log([doc.exists, count >= 5, !(limitPrice in { ...alerts })]);
+          throw "count";
+        }
+
+        docRef.set(
+          {
+            ...(!doc.exists && {
+              formattedNumber,
+              created: admin.firestore.FieldValue.serverTimestamp(),
+            }),
+            alerts: {
+              ...alerts,
+              [limitPrice]: {
+                limitPrice,
+                cooldown,
+                created: admin.firestore.FieldValue.serverTimestamp(),
+              },
+            },
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
           },
-          // if limitprice in data dont incrmeent, avoid race condition
-          ...(!(limitPrice in data) && {
-            count: admin.firestore.FieldValue.increment(1),
-          }),
-        },
-        { merge: true }
-      );
+          { merge: true }
+        );
+      });
       res.status(200).json({ error: false });
-    } else {
+    } catch (e) {
+      console.log(e) 
       res.status(418).json({ error: "count" });
     }
+
+    // res.status(200).json({ error: false });
     // Teapot. Sorry!
   } else {
     res.status(418).json({ error: "captcha" });

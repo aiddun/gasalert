@@ -12,7 +12,7 @@ const PhoneInput = ({ value, setValue }) => {
   return (
     <div>
       <label
-        for="phone_number"
+        htmlFor="phone_number"
         className="block text-sm font-medium text-gray-700"
       >
         Phone Number
@@ -44,7 +44,7 @@ const PhoneInput = ({ value, setValue }) => {
         <input
           type="text"
           name={autocomplete}
-          autocomplete={autocomplete}
+          autoComplete={autocomplete}
           className={`transition duration-200 
           focus:ring-indigo-500 focus:border-indigo-500 block w-full  
           sm:text-sm border-gray-300 rounded-md`}

@@ -249,7 +249,7 @@ const GweiInput = ({ limitPrice, setLimitPrice }) => {
 
   return (
     <div>
-      <label for="price" className="block text-sm font-medium text-gray-700">
+      <label htmlFor="price" className="block text-sm font-medium text-gray-700">
         Price per gas unit
       </label>
       <div className="mt-1 relative rounded-md shadow-sm">
@@ -479,7 +479,7 @@ const SubmitButton = ({ onClick, disabled, title = "Submit", loading }) => (
               cy="12"
               r="10"
               stroke="currentColor"
-              stroke-width="4"
+              strokeWidth="4"
             ></circle>
             <path
               class="opacity-75"
@@ -523,6 +523,10 @@ export default function Home() {
   const [telephone, setTelephone] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setSubmitted(false);
+  }, [cooldown, limitPrice, currencySelected]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 overflow-x-hidden	">

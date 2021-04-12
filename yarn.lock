@@ -519,6 +519,11 @@ autoprefixer@^10.0.4:
     normalize-range "^0.1.2"
     postcss-value-parser "^4.1.0"
 
+awesome-phonenumber@^2.49.0:
+  version "2.49.0"
+  resolved "https://registry.yarnpkg.com/awesome-phonenumber/-/awesome-phonenumber-2.49.0.tgz#6924dffcfbda969a11b7986c3ee0ce39d745819d"
+  integrity sha512-XI5AtK8aEIhp4tcSYbqAkyZ6kfudR0FN544MR3ewQ/kqnHOCU2ZwiYRMmTYApXGuTD1Ph33tvR9D/wmxxzeE0Q==
+
 babel-plugin-syntax-jsx@6.18.0:
   version "6.18.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-syntax-jsx/-/babel-plugin-syntax-jsx-6.18.0.tgz#0af32a9a6e13ca7a3fd5069e62d7b0f58d0d8946"
