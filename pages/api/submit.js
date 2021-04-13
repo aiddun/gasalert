@@ -11,6 +11,7 @@ if (!admin.apps.length) {
   });
 }
 
+
 export default async function submitAPI(req, res) {
   const { token, cooldown, limitPrice, telephone } = req.body;
 
@@ -68,6 +69,7 @@ export default async function submitAPI(req, res) {
                 limitPrice,
                 cooldown,
                 created: admin.firestore.FieldValue.serverTimestamp(),
+                lastTextTime: admin.firestore.FieldValue.serverTimestamp(),
               },
             },
             lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
