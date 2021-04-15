@@ -2,6 +2,7 @@
 
 import admin from "firebase-admin";
 import PhoneNumber from "awesome-phonenumber";
+import { parse } from "postcss";
 var serviceAccount = require("../../fire-admin.json");
 
 if (!admin.apps.length) {
@@ -11,6 +12,7 @@ if (!admin.apps.length) {
   });
 }
 
+const cooldowns = ["30 Mins", "1 Day", "3 Days", "1 Time Only"];
 
 export default async function submitAPI(req, res) {
   const { token, cooldown, limitPrice, telephone } = req.body;
@@ -53,8 +55,16 @@ export default async function submitAPI(req, res) {
         const count = Object.keys({ ...alerts }).length;
 
         if (doc.exists && count >= 5 && !(limitPrice in { ...alerts })) {
-          console.log([doc.exists, count >= 5, !(limitPrice in { ...alerts })]);
           throw "count";
+        }
+        
+        const isNum = /^\d+$/gm;
+        if (isNaN(parseInt(limitPrice)) || !isNum.test(limitPrice)){
+          throw "nan"
+        }
+
+        if (!cooldowns.includes(cooldown)){
+          throw "cooldown"
         }
 
         docRef.set(
@@ -66,7 +76,7 @@ export default async function submitAPI(req, res) {
             alerts: {
               ...alerts,
               [limitPrice]: {
-                limitPrice,
+                limitPrice: parseInt(limitPrice),
                 cooldown,
                 created: admin.firestore.FieldValue.serverTimestamp(),
                 lastTextTime: admin.firestore.FieldValue.serverTimestamp(),
@@ -79,8 +89,7 @@ export default async function submitAPI(req, res) {
       });
       res.status(200).json({ error: false });
     } catch (e) {
-      console.log(e) 
-      res.status(418).json({ error: "count" });
+      res.status(418).json({ error: true });
     }
 
     // res.status(200).json({ error: false });
