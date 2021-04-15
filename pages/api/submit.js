@@ -70,7 +70,7 @@ export default async function submitAPI(req, res) {
         docRef.set(
           {
             ...(!doc.exists && {
-              formattedNumber,
+              phone: formattedNumber,
               created: admin.firestore.FieldValue.serverTimestamp(),
             }),
             alerts: {
