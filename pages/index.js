@@ -249,7 +249,10 @@ const GweiInput = ({ limitPrice, setLimitPrice }) => {
 
   return (
     <div>
-      <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+      <label
+        htmlFor="price"
+        className="block text-sm font-medium text-gray-700"
+      >
         Price per gas unit
       </label>
       <div className="mt-1 relative rounded-md shadow-sm">
@@ -542,8 +545,8 @@ export default function Home() {
       <main className="flex flex-col items-center justify-center flex-1  text-center pt-14 sm:pt-0">
         <h1 className="text-4xl sm:text-6xl font-bold">GasAlert</h1>
 
-        <p className="mt-3 text-lg sm:text-2xl">
-          Get text alerts when gas falls below a limit
+        <p className="mt-3 text-lg w-72 sm:w-auto sm:text-xl">
+          Get text alerts when gas prices on Ethereum fall below a limit
         </p>
 
         <div className="flex flex-wrap items-center justify-around mt-6">

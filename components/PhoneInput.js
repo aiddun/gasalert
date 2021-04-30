@@ -35,6 +35,7 @@ const PhoneInput = ({ value, setValue }) => {
                   : displayCountry.length * 1.05
               }em`,
             }}
+            autoComplete="country"
           >
             {Object.entries(areaCodes).map(([name, code]) => (
               <option key={name}>{`${name} ${code}`}</option>
