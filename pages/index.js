@@ -9,6 +9,8 @@ import VerticalTabSelect from "../components/VerticalTabSelect";
 import PhoneInput from "../components/PhoneInput";
 import { getETH_USDT, getGas } from "../util/getData";
 
+import ReCAPTCHA from "react-google-recaptcha";
+
 const weiToGwei = (n) => n / 1e9;
 const roundto2decimalplaces = (n) => Math.round(n * 100) / 100;
 const roundto3decimalplaces = (n) => Math.round(n * 1000) / 1000;
@@ -527,6 +529,8 @@ export default function Home() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const recaptchaRef = useRef(null);
+
   useEffect(() => {
     setSubmitted(false);
   }, [cooldown, limitPrice, currencySelected]);
@@ -537,9 +541,6 @@ export default function Home() {
         <title>GasAlert</title>
         {/* <link rel="icon" href="/favicon.ico" /> */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <script
-          src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_CAPTCHA_SITE}`}
-        ></script>
       </Head>
 
       <main className="flex flex-col items-center justify-center flex-1  text-center pt-14 sm:pt-0">
@@ -597,39 +598,33 @@ export default function Home() {
                 disabled={telephone === "" || loading}
                 onClick={async (e) => {
                   e.preventDefault();
-                  grecaptcha.ready(function () {
-                    grecaptcha
-                      .execute(process.env.NEXT_PUBLIC_CAPTCHA_SITE, {
-                        action: "submit",
-                      })
-                      .then(async (token) => {
-                        setLoading(true);
-                        const res = await fetch("/api/submit", {
-                          body: JSON.stringify({
-                            token,
-                            cooldown,
-                            limitPrice,
-                            telephone,
-                          }),
-                          headers: {
-                            "Content-Type": "application/json",
-                          },
-                          method: "PUT",
-                        }).catch(() => {
-                          setLoading(false);
-                          setError("Sorry, an error occured.");
-                        });
+                  const token = await recaptchaRef.current.executeAsync();
 
-                        setLoading(false);
-
-                        if (res.ok) {
-                          setError(false);
-                          setSubmitted(true);
-                        } else {
-                          setError("Sorry, an error occured.");
-                        }
-                      });
+                  setLoading(true);
+                  const res = await fetch("/api/submit", {
+                    body: JSON.stringify({
+                      token,
+                      cooldown,
+                      limitPrice,
+                      telephone,
+                    }),
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    method: "PUT",
+                  }).catch(() => {
+                    setLoading(false);
+                    setError("Sorry, an error occured.");
                   });
+
+                  setLoading(false);
+
+                  if (res.ok) {
+                    setError(false);
+                    setSubmitted(true);
+                  } else {
+                    setError("Sorry, an error occured.");
+                  }
                 }}
               />
             </div>
@@ -644,6 +639,12 @@ export default function Home() {
         <br />
         Tips: 0x288fccf4af11928e62eab282152f2987756188c0
       </footer>
+
+      <ReCAPTCHA
+        ref={recaptchaRef}
+        size="invisible"
+        sitekey={process.env.NEXT_PUBLIC_CAPTCHA_SITE}
+      />
     </div>
   );
 }
