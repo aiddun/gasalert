@@ -79,7 +79,7 @@ export default async function submitAPI(req, res) {
                 limitPrice: parseInt(limitPrice),
                 cooldown,
                 created: admin.firestore.FieldValue.serverTimestamp(),
-                lastTextTime: admin.firestore.FieldValue.serverTimestamp(),
+                // lastTextTime: admin.firestore.FieldValue.serverTimestamp(),
               },
             },
             lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
