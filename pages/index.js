@@ -592,7 +592,7 @@ export default function Home() {
             </div>
             <div className="pt-8 flex justify-center ">
               <SubmitButton
-                title={submitted ? "Submitted" : "Submit"}
+                title={submitted ? "Subscribed" : "Subscribe"}
                 loading={loading}
                 disabled={telephone === "" || loading}
                 onClick={async (e) => {
