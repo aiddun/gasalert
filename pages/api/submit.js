@@ -41,7 +41,7 @@ export default async function submitAPI(req, res) {
 
   const { success, score } = json;
 
-  if (success && score >= 0.6) {
+  if (success) {
     const docRef = admin.firestore().collection("users").doc(formattedNumber);
 
     // transactions baby
@@ -57,14 +57,14 @@ export default async function submitAPI(req, res) {
         if (doc.exists && count >= 5 && !(limitPrice in { ...alerts })) {
           throw "count";
         }
-        
+
         const isNum = /^\d+$/gm;
-        if (isNaN(parseInt(limitPrice)) || !isNum.test(limitPrice)){
-          throw "nan"
+        if (isNaN(parseInt(limitPrice)) || !isNum.test(limitPrice)) {
+          throw "nan";
         }
 
-        if (!cooldowns.includes(cooldown)){
-          throw "cooldown"
+        if (!cooldowns.includes(cooldown)) {
+          throw "cooldown";
         }
 
         docRef.set(
