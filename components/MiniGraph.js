@@ -190,7 +190,6 @@ const MiniGraph = ({
   }
 
   useEffect(() => {
-    console.log(loadCount.current);
     if (modifiedLocally.current === false && loadCount.current > 1) {
       canMutateGlobalPrice.current = false;
     }
