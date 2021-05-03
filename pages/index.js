@@ -530,6 +530,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   const recaptchaRef = useRef(null);
+  const tokenRef = useRef(null);
 
   useEffect(() => {
     setSubmitted(false);
@@ -598,7 +599,11 @@ export default function Home() {
                 disabled={telephone === "" || loading}
                 onClick={async (e) => {
                   e.preventDefault();
-                  const token = await recaptchaRef.current.executeAsync();
+                  let token;
+                  if (!(token = tokenRef.current)) {
+                    token = await recaptchaRef.current.executeAsync();
+                    tokenRef.current = token;
+                  }
 
                   setLoading(true);
                   const res = await fetch("/api/submit", {
@@ -623,7 +628,7 @@ export default function Home() {
                     setError(false);
                     setSubmitted(true);
                   } else {
-                    const {error} = await res.json();
+                    const { error } = await res.json();
                     setError("Sorry, an error occured: " + error);
                   }
                 }}
