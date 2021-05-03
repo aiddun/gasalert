@@ -626,7 +626,8 @@ export default function Home() {
                           setError(false);
                           setSubmitted(true);
                         } else {
-                          setError("Sorry, an error occured.");
+                          const { error } = await res.json();
+                          setError("Sorry, an error occured: " + error);
                         }
                       });
                   });
