@@ -41,7 +41,7 @@ export default async function submitAPI(req, res) {
 
   const { success, score } = json;
 
-  if (success && score >= 0.7) {
+  if (success && score >= 0.6) {
     const docRef = admin.firestore().collection("users").doc(formattedNumber);
 
     // transactions baby
