@@ -623,7 +623,8 @@ export default function Home() {
                     setError(false);
                     setSubmitted(true);
                   } else {
-                    setError("Sorry, an error occured.");
+                    const resp = await res.json();
+                    setError("Sorry, an error occured: " + resp);
                   }
                 }}
               />
