@@ -48,7 +48,7 @@ export default async function submitAPI(req, res) {
     try {
       const r = await admin.firestore().runTransaction(async (t) => {
         const doc = await t.get(docRef);
-        const data = doc.data();
+        const data = doc.data() || {};
 
         const { alerts } = data;
         // do fancy destructuring to avoid trying to key undefined
@@ -74,7 +74,7 @@ export default async function submitAPI(req, res) {
               created: admin.firestore.FieldValue.serverTimestamp(),
             }),
             alerts: {
-              ...alerts,
+              ...(alerts || {}),
               [limitPrice]: {
                 limitPrice: parseInt(limitPrice),
                 cooldown,
