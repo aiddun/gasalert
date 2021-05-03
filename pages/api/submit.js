@@ -89,7 +89,7 @@ export default async function submitAPI(req, res) {
       });
       res.status(200).json({ error: false });
     } catch (e) {
-      res.status(418).json({ error: true });
+      res.status(418).json({ error: e });
     }
 
     // res.status(200).json({ error: false });
