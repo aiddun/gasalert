@@ -20,7 +20,7 @@ function MyApp({ Component, pageProps }) {
           property="og:description"
           content="Get text alerts when ethereum gas prices fall below a limit"
         />
-        <meta property="og:image" content="/previewimg.jpg"/>
+        <meta property="og:image" content="https://gasalert.app/previewimg.jpg"/>
 
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://gasalert.app/" />
@@ -29,7 +29,7 @@ function MyApp({ Component, pageProps }) {
           property="twitter:description"
           content="Get text alerts when ethereum gas prices fall below a limit"
         />
-        <meta property="twitter:image" content="/previewimg.jpg"></meta>
+        <meta property="twitter:image" content="https://gasalert.app/previewimg.jpg"></meta>
       </Head>
       <Component {...pageProps} />
     </>
