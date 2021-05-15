@@ -623,7 +623,7 @@ export default function Home() {
                     setError(false);
                     setSubmitted(true);
                   } else {
-                    const {error} = await res.json();
+                    const { error } = await res.json();
                     setError("Sorry, an error occured: " + error);
                   }
                 }}
@@ -635,10 +635,16 @@ export default function Home() {
       </main>
 
       <footer className="flex items-center justify-center w-full h-24 border-t text-center text-xs text-gray-600 mt-8 md:mt-0">
-        All figures provided are estimations
-        <br />
-        <br />
-        Tips: 0x288fccf4af11928e62eab282152f2987756188c0
+        <div className="leading-6">
+          All figures provided are estimations
+          <br />
+          By{" "}
+          <a href="https://twitter.com/_aiddun" className="underline">
+            aidan
+          </a>
+          <br />
+          Tips: 0x288fccf4af11928e62eab282152f2987756188c0
+        </div>
       </footer>
 
       <ReCAPTCHA
