@@ -23,8 +23,8 @@ export async function getServerSideProps(context) {
 
 const transactions = [
   { name: "ETH Transfer", gasCost: 21000 },
-  { name: "ERC20 Transfer", gasCost: 52000 },
-  { name: "Uniswap Trade", gasCost: 130000 },
+  { name: "ERC20 Transfer", gasCost: 46000 },
+  { name: "Uniswap v3 Trade", gasCost: 129830 },
   { name: "Opensea Registry", gasCost: 391402 },
   { name: "Zora Mint", gasCost: 554136 },
 ];
