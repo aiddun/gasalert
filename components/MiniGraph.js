@@ -58,6 +58,8 @@ const MiniGraph = ({
 
   const [loading, setLoading] = useState(false);
 
+  const [showTooltip, setShowTooltip] = useState(true);
+
   const lastDate = useRef(null);
   const graphRef = useRef(null);
   const toolTipRef = useRef(null);
@@ -104,6 +106,10 @@ const MiniGraph = ({
       displayDate: lastDate.current,
       onmousemove: (event, datapoint) => {
         const tooltip = toolTipRef.current;
+
+        if (showTooltip){
+          setShowTooltip(false)
+        }
 
         const date = formatDate(new Date(datapoint.date));
         setDisplayDate(date);
@@ -199,6 +205,9 @@ const MiniGraph = ({
   return (
     <div className="">
       <div className="relative">
+        <p className={`absolute w-full text-center text-xs animate-pulse ${showTooltip ? "": "invisible" }`}>
+          Hover over me!
+        </p>
         <svg
           ref={graphRef}
           className={`eth block rounded-xl ${loading ? "invisible" : ""}`}

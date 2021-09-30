@@ -593,9 +593,10 @@ export default function Home() {
             </div>
             <div className="pt-8 flex justify-center ">
               <SubmitButton
-                title={submitted ? "Subscribed" : "Subscribe"}
+                title={"Out of twilio money atm srry"}
                 loading={loading}
-                disabled={telephone === "" || loading}
+                disabled={true}
+                // disabled={telephone === "" || loading}
                 onClick={async (e) => {
                   e.preventDefault();
                   const token = await recaptchaRef.current.executeAsync();
