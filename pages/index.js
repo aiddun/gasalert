@@ -8,6 +8,7 @@ import HorizontalTabSelect from "../components/HorizontalTabSelect";
 import VerticalTabSelect from "../components/VerticalTabSelect";
 import PhoneInput from "../components/PhoneInput";
 import { getETH_USDT, getGas } from "../util/getData";
+import { useCachedStateSSR } from "../util/useCachedState"
 
 import ReCAPTCHA from "react-google-recaptcha";
 
@@ -89,7 +90,6 @@ const TR = ({
   );
 };
 
-var priceDataCache = {};
 
 const ConversionPane = ({
   limitPrice,
@@ -102,40 +102,26 @@ const ConversionPane = ({
   const [timeFrameSelected, setTimeFrameSelected] = useState("1W");
   const [data, setData] = useState([{ date: 0, gwei: 0, value: 0 }]);
   const [previewPrice, setPreviewPrice] = useState(data[0]);
-  // const [dateSelected, setDateSelected] = useState(null);
+  const [priceDataCache, setPriceDataCache] = useCachedStateSSR({}, "priceData", 30);
 
   useEffect(async () => {
     let pricePoints;
+    console.log(priceDataCache);
+    if (priceDataCache == null) return;
     if (priceDataCache[timeFrameSelected]) {
       pricePoints = priceDataCache[timeFrameSelected];
     } else {
       pricePoints = await getGas(timeFrameSelected);
-      // if (timeFrameSelected !== "1D")
-      priceDataCache[timeFrameSelected] = pricePoints;
+      pricePoints = pricePoints.map(({gasPrice, tokenPrice, timestamp}) => ({date: timestamp, value: gasPrice.close, gwei: gasPrice.close, ethPrice: tokenPrice.close}))
+      setPriceDataCache({...priceDataCache, [timeFrameSelected]: pricePoints})
     }
 
-    pricePoints = pricePoints.map(({ time, med, min }) => {
-      const val = roundto3decimalplaces(weiToGwei(med));
-      return {
-        date: time,
-        // convert wei to gwi
-        gwei: Math.round(val),
-        value: val,
-      };
-    });
 
     if (currencySelected === "USDT") {
       let conversions;
-      const queryString = `ETH_USDT-${timeFrameSelected}`;
-      if (priceDataCache[queryString]) {
-        conversions = priceDataCache[queryString];
-      } else {
-        conversions = await getETH_USDT(timeFrameSelected);
-        priceDataCache[queryString] = conversions;
-      }
 
       pricePoints.forEach(
-        (e, i) => (e.value *= conversions[i].weightedAverage / 1e9)
+        ({value, ethPrice}, i) => pricePoints[i].value = (value * (ethPrice / 1e9))
       );
     }
 
@@ -144,7 +130,7 @@ const ConversionPane = ({
       setPreviewPrice(pricePoints[pricePoints.length - 1].value);
     }
     setData(pricePoints);
-  }, [currencySelected, timeFrameSelected, speed]);
+  }, [currencySelected, timeFrameSelected, speed, priceDataCache]);
 
   // const data2 = data.map(({ date, value }) => ({ date, value: value ** 2 }));
 
@@ -171,7 +157,7 @@ const ConversionPane = ({
                   />
                   <div className="flex items-center">
                     <VerticalTabSelect
-                      elements={["1D", "1W", "6M"]}
+                      elements={["1D", "1W", "90D"]}
                       selectedElement={timeFrameSelected}
                       setSelectedElement={setTimeFrameSelected}
                     />
@@ -648,11 +634,12 @@ export default function Home() {
         </div>
       </footer>
 
-      <ReCAPTCHA
-        ref={recaptchaRef}
-        size="invisible"
-        sitekey={process.env.NEXT_PUBLIC_CAPTCHA_SITE}
-      />
     </div>
   );
 }
+
+      // <ReCAPTCHA
+      //   ref={recaptchaRef}
+      //   size="invisible"
+      //   sitekey={process.env.NEXT_PUBLIC_CAPTCHA_SITE}
+      // />

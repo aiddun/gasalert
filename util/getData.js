@@ -1,66 +1,56 @@
-const getGasHistory = () => {};
+const getDate = (periodString) => {
+  const d = new Date();
+  if (periodString === "90D") {
+    d.setDate(d.getDate() - 90);
+  } else if (periodString === "1W") {
+    d.setDate(d.getDate() - 7);
+  } else {
+    d.setDate(d.getDate() - 1);
+  }
 
-const gasPeriods = {
-  "1D": "d",
-  "1W": "w",
-  "6M": "all",
+  return d;
+}
+
+const periodCandleLengthsMins = {
+  "1D": 10,
+  "1W": 60,
+  "90D": 24 * 60,
 };
 
 // D, W, 6M
 export const getGas = async (period) => {
+  const d = getDate(period);
+  const deltaD = (new Date() - d) / 1000 / 60;
   const params = {
-    filter: "a",
-    zoom: gasPeriods[period],
+    from: d.getTime() / 1000,
+    // Maximum, can ignore
+    candles: Math.floor(deltaD / periodCandleLengthsMins[period]),
+    timeframe: periodCandleLengthsMins[period],
+    tokenprice: true,
   };
 
-  const url = new URL("https://www.gasnow.org/api/v3/block/history");
+  const url = new URL("https://owlracle.info/eth/history");
   url.search = new URLSearchParams(params).toString();
 
   let data = await fetch(url, {
     method: "GET",
   }).then((res) => res.json());
 
-  // ugh
-  data = data.data;
-
-  if (period === "6M") {
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const startIndex = data.findIndex(
-      ({ time }) => new Date(time) >= sixMonthsAgo
-    );
-
-    data = data.slice(startIndex);
-  }
+  console.log(data)
 
   return data;
 };
 
-const periods = {
-  "1D": 300,
-  "1W": 1800,
-  "6M": 86400,
-};
 
 export const getETH_USDT = async (period) => {
-  let d = new Date();
-
-  if (period === "6M") {
-    d.setMonth(d.getMonth() - 6);
-  } else if (period === "1W") {
-    d.setDate(d.getDate() - 7);
-  } else {
-    // 1D
-    d.setDate(d.getDate() - 1);
-  }
+  let d = getDate(period);
 
   let params = {
     command: "returnChartData",
     currencyPair: "USDT_ETH",
     start: d.getTime() / 1000,
     end: (new Date().getTime() + 60) / 1000,
-    period: periods[period] || periods["D"],
+    period: periodCandleLengthsMins[period],
   };
 
   const url = new URL("https://poloniex.com/public");
